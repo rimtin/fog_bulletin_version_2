@@ -1,0 +1,1 @@
+# fog_bulletin_version_2
