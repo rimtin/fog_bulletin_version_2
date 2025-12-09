@@ -11,6 +11,7 @@
   /* ---------- Subdivisions ----------
    * Each entry gets a stable `id` you can use as a key across
    * tables, maps, and fetch layers (format: `${state}:${name}`).
+   * (Same 19 met-subdivisions as before)
    */
   const subdivisions = [
     { state: "Punjab",         name: "Punjab" },
@@ -41,92 +42,71 @@
     return acc;
   }, {});
 
-  /* ---------- District lists for UI (from your image + full Punjab) ---------- */
+  /* ---------- District lists for THIS project ---------- */
+  // Exactly the 39 districts & 6 states you provided
   const districtLists = {
-    // From your screenshot (Rajasthan column)
-    "Rajasthan": [
-      "Phalodi",
-      "Jaisalmer",
-      "Bikaner",
-      "Jodhpur",
-      "Barmer",
-      "Kotputli–Behror",
-      "Nagaur"
+    "Haryana": [
+      "Sirsa",
+      "Hisar",
+      "Fatehabad"
     ],
-
-    // From your screenshot (Gujarat column)
-    "Gujarat": [
-      "Aravalli",
-      "Patan",
-      "Banaskantha",
-      "Kutch",
-      "Bhavnagar",
-      "Amreli",
-      "Rajkot",
-      "Surendranagar",
-      "Anand",
-      "Bharuch",
-      "Ahmedabad",
-      "Gir Somnath",
-      "Surat"
-    ],
-
-    // From your screenshot (AP column)
-    "AP": [
-      "Anantapuramu",
-      "Sri Sathya Sai",
-      "YSR Kadapa",
-      "Annamayya",
-      "Kurnool",
-      "Nandyal",
-      "Prakasam",
-      "Palnadu",
-      "Guntur",
-      "Krishna",
-      "East Godavari / Konaseema",
-      "West Godavari / Eluru",
-      "Vizianagaram"
-    ],
-
-    // From your screenshot (TN column)
-    "TN": [
-      "Thoothukudi",
-      "Ramanathapuram",
-      "Sivaganga",
-      "Tiruppur",
-      "Coimbatore"
-    ],
-
-    // Full Punjab district list (with common alt spellings in parentheses)
     "Punjab": [
-      "Amritsar",
-      "Barnala",
-      "Bathinda",
-      "Faridkot",
-      "Fatehgarh Sahib",
-      "Fazilka",
-      "Ferozepur",
-      "Gurdaspur",
-      "Hoshiarpur",
-      "Jalandhar",
-      "Kapurthala",
+      "Mohali",
       "Ludhiana",
-      "Mansa",
-      "Moga",
-      "Sri Muktsar Sahib",
-      "Pathankot",
       "Patiala",
-      "Rupnagar (Ropar)",
-      "SAS Nagar (Mohali)",
-      "Sangrur",
-      "SBS Nagar (Nawanshahr)",
-      "Tarn Taran",
-      "Malerkotla"
+      "Firozpur",
+      "Bathinda",
+      "Barnala",
+      "Faridkot",
+      "Mansa"
+    ],
+    "Rajasthan": [
+      "Jodhpur",
+      "Phalodi",
+      "Nagaur",
+      "Jaisalmer",
+      "Barmer",
+      "Banswara",
+      "Pali"
+    ],
+    "Gujarat": [
+      "Jamnagar",
+      "Surendranagar",
+      "Rajkot",
+      "Ahmedabad",
+      "Bhavnagar",
+      "Gandhinagar",
+      "Kutch",
+      "Dahod",
+      "Sabarkantha"
+    ],
+    "Madhya Pradesh": [
+      "Raisen",
+      "Sehore",
+      "Vidisha",
+      "Chhindwara",
+      "Sagar",
+      "Betul",
+      "Guna",
+      "Sidhi"
+    ],
+    "Uttar Pradesh": [
+      "Prayagraj",
+      "Banda",
+      "Hamirpur",
+      "Fatehpur"
     ]
   };
 
-  // Optional order you can use for rendering columns
-  const districtStatesOrder = ["Rajasthan", "Gujarat", "AP", "TN", "Punjab"];
+  // Order of columns / sections when you render these
+  const districtStatesOrder = [
+    "Haryana",
+    "Punjab",
+    "Rajasthan",
+    "Gujarat",
+    "Madhya Pradesh",
+    "Uttar Pradesh"
+  ];
 
   // Tiny helper to fetch a list by key
   function getDistricts(key) {
@@ -135,7 +115,6 @@
 
   /* ---------- Fog palette & categories (5 classes) ---------- */
 
-  // Colors follow your graphic: blue → green → yellow → orange → red
   const forecastColors = {
     "Almost Clear Sky":           "#66CCFF", // high vis, high GHI
     "Shallow/Light Fog/Mist":    "#7CFC00", // light green
@@ -145,7 +124,6 @@
   };
   const forecastOptions = Object.keys(forecastColors);
 
-  // Use fog emojis on the map
   const forecastIcons = {
     "Almost Clear Sky":           "🌤️",
     "Shallow/Light Fog/Mist":    "🌫️",
@@ -154,13 +132,9 @@
     "Very Dense/Very Thick Fog": "🌫️"
   };
 
-  // Row colors (same as palette for strong visual link)
   const cloudRowColors = { ...forecastColors };
 
-  // Buckets for fog based on visibility (meters); we re-use names
-  // cover  = "Visibility Range" column
-  // label  = "Fog Category" column
-  // type   = "Sky & GHI" column
+  // Fog buckets based on visibility (meters)
   const cloudBuckets = [
     {
       min: 1001,
@@ -199,7 +173,6 @@
     }
   ];
 
-  // Helper functions still work, now interpreting "pct" as any scalar
   function labelByCloudPct(x) {
     const v = Number.isFinite(x) ? x : 0;
     const b = cloudBuckets.find(b => v >= b.min && v < b.max) || cloudBuckets.at(-1);
@@ -212,7 +185,7 @@
     return cloudBuckets.find(b => v >= b.min && v < b.max) || cloudBuckets.at(-1);
   }
 
-  // Rows for the fog classification table
+  // These rows feed the Fog Classification table
   const cloudRows = cloudBuckets.map(({ cover, label, type }) => ({ cover, label, type }));
 
   /* ---------- IST date utilities ---------- */
@@ -243,9 +216,9 @@
   window.subdivisionById       = subdivisionById;
   window.subdivisionsByState   = subdivisionsByState;
 
-  window.districtLists         = districtLists;            // { key -> [districts] }
-  window.districtStatesOrder   = districtStatesOrder;      // ["Rajasthan","Gujarat","AP","TN","Punjab"]
-  window.getDistricts          = getDistricts;             // helper
+  window.districtLists         = districtLists;          // { state -> [districts] }
+  window.districtStatesOrder   = districtStatesOrder;    // order for UI
+  window.getDistricts          = getDistricts;
 
   window.forecastColors        = forecastColors;
   window.forecastOptions       = forecastOptions;
