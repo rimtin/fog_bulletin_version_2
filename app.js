@@ -1,16 +1,16 @@
 
-// === Sub-division coloring by ST_NM with centered icons + per-map legends ===
+// === District coloring by name with per-map legends (NO ICONS) ===
 
 const W = 860, H = 580, PAD = 18;
-const MATCH_KEY = "ST_NM";       // color by this field in GeoJSON
+const MATCH_KEY = "ST_NM";       // match against this field in GeoJSON
 let STATE_KEY = "ST_NM";
 let NAME_KEY  = "name";
 
 // Per-map stores
-const indexByGroup  = { "#indiaMapDay1": new Map(), "#indiaMapDay2": new Map() }; // norm(ST_NM) -> [paths]
-const groupCentroid = { "#indiaMapDay1": {}, "#indiaMapDay2": {} };                // norm(ST_NM) -> [x,y]
+const indexByGroup  = { "#indiaMapDay1": new Map(), "#indiaMapDay2": new Map() }; // norm(name) -> [paths]
+const groupCentroid = { "#indiaMapDay1": {}, "#indiaMapDay2": {} };                // kept but unused (no icons)
 
-// optional fine-tune offsets per group
+// optional fine-tune offsets per group (unused now, but kept)
 const ICON_OFFSETS = {};
 
 // ---------- helpers ----------
@@ -77,7 +77,7 @@ async function fetchFirst(urls){
   throw new Error("No GeoJSON found");
 }
 
-/* ---------- COLORED cloud table ---------- */
+/* ---------- Fog classification table ---------- */
 function buildCloudTable(){
   const table = document.getElementById("cloudTable");
   if (!table) return;
@@ -149,7 +149,7 @@ async function drawMap(svgId){
     .append("path").attr("d","M0,0 l6,6").attr("stroke","#999").attr("stroke-width",1);
 
   const fillLayer = ensureLayer(svg, "fill-layer");
-  ensureLayer(svg, "icon-layer").style("pointer-events","none");
+  ensureLayer(svg, "icon-layer").style("pointer-events","none"); // kept but unused
 
   // load features
   let features = [];
@@ -176,7 +176,7 @@ async function drawMap(svgId){
     .attr("fill", "url(#diagonalHatch)")
     .attr("stroke", "#666").attr("stroke-width", 0.7);
 
-  // --- hover tooltip (only for configured 19 sub-divisions) ---
+  // --- hover tooltip (only for configured districts) ---
   const allowed = new Set((window.subdivisions || []).map(r => norm(r.name)));
   const tooltip = ensureTooltip();
 
@@ -187,7 +187,6 @@ async function drawMap(svgId){
       const key = norm(raw);
       if (!allowed.has(key)) { tooltip.style("opacity", 0); return; }
 
-      // clamp tooltip inside viewport
       const pad = 14, vw = window.innerWidth, vh = window.innerHeight, ttW = 200, ttH = 44;
       let x = event.clientX + pad, y = event.clientY + pad;
       if (x + ttW > vw) x = vw - ttW - pad;
@@ -199,7 +198,7 @@ async function drawMap(svgId){
     .on("pointerleave", function(){ tooltip.style("opacity", 0); })
     .style("cursor", d => allowed.has(norm(d?.properties?.[MATCH_KEY] ?? "")) ? "pointer" : "default");
 
-  // index & group by ST_NM
+  // index & group by MATCH_KEY (district name)
   const idx = new Map(), groups = new Map();
   paths.each(function(d){
     const key = norm(String(d.properties?.[MATCH_KEY] ?? ""));
@@ -209,7 +208,7 @@ async function drawMap(svgId){
   });
   indexByGroup[svgId] = idx;
 
-  // projected centroid per group
+  // projected centroid per group (kept but currently unused – no icons)
   groupCentroid[svgId] = {};
   const gp = d3.geoPath(projection);
   groups.forEach((arr, key) => {
@@ -219,7 +218,7 @@ async function drawMap(svgId){
     if (Number.isFinite(x) && Number.isFinite(y)) groupCentroid[svgId][key] = [x,y];
   });
 
-  drawLegend(svg, svgId === "#indiaMapDay1" ? "Index — Day 1" : "Index — Day 2");
+  drawLegend(svg, svgId === "#indiaMapDay1" ? "Fog – Day 1" : "Fog – Day 2");
 
   if (svgId === "#indiaMapDay2"){
     buildFixedTable();
@@ -230,7 +229,7 @@ async function drawMap(svgId){
   }
 }
 
-/* ---------- Forecast table with merged State cells ---------- */
+/* ---------- Forecast table (Districts) ---------- */
 function buildFixedTable(){
   const tbody = document.getElementById("forecast-table-body");
   if (!tbody) return;
@@ -238,7 +237,7 @@ function buildFixedTable(){
 
   const options = window.forecastOptions || [];
 
-  // group by state
+  // group districts by state
   const byState = new Map();
   (window.subdivisions || []).forEach(row => {
     if (!byState.has(row.state)) byState.set(row.state, []);
@@ -282,7 +281,7 @@ function buildFixedTable(){
           sel.appendChild(o);
         });
         sel.addEventListener("change", () => {
-          updateMapColors();               // recolor map + all selects
+          updateMapColors();
         });
         if (sel.options.length && sel.selectedIndex < 0) sel.selectedIndex = 0;
       });
@@ -310,10 +309,9 @@ function highlight(label, on){
   });
 }
 
-/* ---------- coloring + icons + colored selects ---------- */
+/* ---------- coloring + colored selects (NO ICONS) ---------- */
 function updateMapColors(){
   const pal   = window.forecastColors || {};
-  const icons = window.forecastIcons  || {};
 
   const rows = Array.from(document.querySelectorAll("#forecast-table-body tr")).map(tr => {
     const subdiv = tr.dataset.subdiv;
@@ -322,7 +320,6 @@ function updateMapColors(){
     const day1   = day1Sel?.value || null;
     const day2   = day2Sel?.value || null;
 
-    // Color the selects themselves
     if (day1Sel) colorizeSelect(day1Sel, day1);
     if (day2Sel) colorizeSelect(day2Sel, day2);
 
@@ -337,39 +334,17 @@ function updateMapColors(){
     // reset fills
     svg.selectAll(".subdiv").attr("fill","url(#diagonalHatch)");
 
-    // icon layer on top
-    const gIcons = ensureLayer(svg, "icon-layer").style("pointer-events","none");
-    gIcons.raise(); gIcons.selectAll("*").remove();
-
     rows.forEach(rec => {
       const nodes = idxMap.get(rec.key);
       if (!nodes) { console.warn("[No match]", rec.raw); return; }
       const color = pal[rec[dayKey]] || "#eee";
       nodes.forEach(n => n.setAttribute("fill", color));
-
-      const pos = groupCentroid[svgId][rec.key];
-      if (!pos) return;
-      const [x,y] = pos;
-
-      // dot + emoji
-      gIcons.append("circle")
-        .attr("cx", x).attr("cy", y).attr("r", 5.5)
-        .attr("fill", "#f5a623").attr("stroke","#fff")
-        .attr("stroke-width",1.3).attr("vector-effect","non-scaling-stroke");
-
-      const emoji = icons[rec[dayKey]];
-      if (emoji) {
-        gIcons.append("text")
-          .attr("x", x).attr("y", y)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "central")
-          .attr("font-size", 18)
-          .attr("font-family", `"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`)
-          .attr("paint-order", "stroke")
-          .attr("stroke", "white").attr("stroke-width", 2)
-          .text(emoji);
-      }
     });
+
+    // icon-layer kept but left empty (no circles / text)
+    const gIcons = ensureLayer(svg, "icon-layer").style("pointer-events","none");
+    gIcons.raise();
+    gIcons.selectAll("*").remove(); // ensure nothing is drawn
   });
 }
 
@@ -381,7 +356,7 @@ function wirePrintNotesMirror(){
   const sync = () => { ghost.value = live.value; };
   live.addEventListener('input', sync);
   window.addEventListener('beforeprint', sync);
-  sync(); // initial
+  sync();
 }
 
 /* ---------- init ---------- */
