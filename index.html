@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>☁️ Cloud Bulletin – Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts + light UI -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap');
+    body { font-family: 'Nunito', sans-serif; }
+    .shadow-soft{box-shadow:0 10px 25px -5px rgba(0,0,0,.10),0 10px 10px -5px rgba(0,0,0,.04)}
+    .gradient-text{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+    .nav-btn{padding:.5rem 1rem;border-radius:.75rem;font-weight:600}
+    .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+    .tbl th,.tbl td{border-bottom:1px solid rgba(0,0,0,.06);color:#111827}
+    /* tiny chevron select */
+    .select-clean{
+      appearance:none;-webkit-appearance:none;-moz-appearance:none;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat:no-repeat;background-position:right .6rem center;background-size:14px 14px;
+      padding-right:2rem;border:1px solid #e5e7eb;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);color:#111827
+    }
+  </style>
+
+  <!-- D3 + TopoJSON -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+  <!-- Nav -->
+  <nav class="max-w-6xl mx-auto px-4 mt-6">
+    <div class="bg-white shadow-soft rounded-2xl px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">☁️</span>
+        <span class="text-lg font-extrabold gradient-text">Cloud Bulletin</span>
+      </div>
+      <div class="flex gap-2">
+        <a href="index.html"  class="nav-btn active">home</a>
+        <a href="daily.html"  class="nav-btn bg-white shadow-sm">daily</a>
+        <a href="hourly.html" class="nav-btn bg-white shadow-sm">hourly</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="text-center md:text-left">
+          <h1 class="text-3xl md:text-4xl font-extrabold gradient-text">Cloud Coverage Forecast Bulletin</h1>
+          <p class="text-gray-700 mt-1">Forecast Date: <span id="forecast-date">—</span></p>
+        </div>
+        <button class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl shadow-soft" onclick="window.print()">⬇️ Download PDF</button>
+      </div>
+    </header>
+
+    <!-- Fog classification -->
+    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">Fog Classification</h3>
+      <div class="overflow-x-auto">
+        <table id="cloudTable" class="tbl min-w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left px-3 py-2">S. No.</th>
+              <th class="text-left px-3 py-2">Visibility Range</th>
+              <th class="text-left px-3 py-2">Fog Category</th>
+              <th class="text-left px-3 py-2">Sky &amp; GHI</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-gray-600 text-sm"><strong>Note:</strong> This fog terminology is for local use only.</p>
+    </section>
+
+    <!-- Table -->
+    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">Sub-Division Forecast (Day 1 & Day 2)</h3>
+      <div class="overflow-x-auto">
+        <table class="tbl min-w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-left px-3 py-2">S. No.</th>
+              <th class="text-left px-3 py-2">State</th>
+              <th class="text-left px-3 py-2">Sub Division</th>
+              <th class="text-left px-3 py-2">Day 1</th>
+              <th class="text-left px-3 py-2">Day 2</th>
+            </tr>
+          </thead>
+          <tbody id="forecast-table-body"></tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-gray-600 text-sm">✏️ Select the appropriate fog category for Day 1 / Day 2.</p>
+    </section>
+
+    <!-- Maps -->
+    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">Map 1 – Division Fog Forecast (Day 1)</h3>
+      <svg id="indiaMapDay1" viewBox="0 0 860 580" class="w-full h-[420px] rounded-2xl bg-gray-50 border border-gray-100"></svg>
+    </section>
+
+    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <h3 class="text-xl font-bold text-gray-900 mb-4">Map 2 – Division Fog Forecast (Day 2)</h3>
+      <svg id="indiaMapDay2" viewBox="0 0 860 580" class="w-full h-[420px] rounded-2xl bg-gray-50 border border-gray-100"></svg>
+    </section>
+
+    <!-- Notes -->
+    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
+      <h3 class="text-xl font-bold mb-3 text-gray-900">Dialog / Notes</h3>
+      <textarea id="notes" class="w-full h-32 rounded-xl border border-gray-200 p-3 text-gray-800 placeholder-gray-400" placeholder="Add your notes here..."></textarea>
+    </section>
+  </main>
+
+  <!-- Shared -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
