@@ -1,17 +1,25 @@
-
-// === District coloring by name with per-map legends (NO ICONS) ===
+// === District-level fog map (no icons) ===
 
 const W = 860, H = 580, PAD = 18;
-const MATCH_KEY = "ST_NM";       // match against this field in GeoJSON
+
+// We will color by DISTRICT NAME (GeoJSON "name" field)
 let STATE_KEY = "ST_NM";
 let NAME_KEY  = "name";
+let MATCH_KEY = "name";  // <— important: match districts, not states
+
+// Only show these states on the map
+const ALLOWED_STATES = new Set([
+  "Haryana",
+  "Punjab",
+  "Rajasthan",
+  "Gujarat",
+  "Madhya Pradesh",
+  "Uttar Pradesh"
+]);
 
 // Per-map stores
-const indexByGroup  = { "#indiaMapDay1": new Map(), "#indiaMapDay2": new Map() }; // norm(name) -> [paths]
-const groupCentroid = { "#indiaMapDay1": {}, "#indiaMapDay2": {} };                // kept but unused (no icons)
-
-// optional fine-tune offsets per group (unused now, but kept)
-const ICON_OFFSETS = {};
+const indexByGroup  = { "#indiaMapDay1": new Map(), "#indiaMapDay2": new Map() }; // norm(district name) -> [paths]
+const groupCentroid = { "#indiaMapDay1": {}, "#indiaMapDay2": {} };                // kept for future use
 
 // ---------- helpers ----------
 let mapTooltip = null;
@@ -36,6 +44,7 @@ function detectKeys(features){
   const sample = features[0]?.properties || {};
   STATE_KEY = sKeys.find(k => k in sample) || STATE_KEY;
   NAME_KEY  = dKeys.find(k => k in sample) || NAME_KEY;
+  MATCH_KEY = NAME_KEY; // <— we color / match by district name
   console.log("[Map] keys:", { stateKey: STATE_KEY, districtKey: NAME_KEY, matchKey: MATCH_KEY });
 }
 
@@ -130,11 +139,11 @@ function drawLegend(svg, title){
 
 /* ---------- helper: color the select controls ---------- */
 function colorizeSelect(sel, label){
-  const pal=window.forecastColors||{};
-  const c=pal[label]||"#fff";
-  sel.style.backgroundColor=c;
-  sel.style.color="#000";
-  sel.style.borderColor="#000";
+  const pal = window.forecastColors || {};
+  const c = pal[label] || "#fff";
+  sel.style.backgroundColor = c;
+  sel.style.color = "#000";
+  sel.style.borderColor = "#000";
 }
 
 /* ---------- draw one map ---------- */
@@ -149,20 +158,38 @@ async function drawMap(svgId){
     .append("path").attr("d","M0,0 l6,6").attr("stroke","#999").attr("stroke-width",1);
 
   const fillLayer = ensureLayer(svg, "fill-layer");
-  ensureLayer(svg, "icon-layer").style("pointer-events","none"); // kept but unused
+  ensureLayer(svg, "icon-layer").style("pointer-events","none"); // unused but kept
 
   // load features
-  let features = [];
+  let allFeatures = [];
   try{
     const geo = await fetchFirst(GEO_URLS);
-    features = (geo.type === "Topology")
+    allFeatures = (geo.type === "Topology")
       ? topojson.feature(geo, geo.objects[Object.keys(geo.objects)[0]]).features
       : (geo.features || []);
-  }catch(e){ alert("Could not load GeoJSON"); console.error(e); return; }
-  if (!features.length){ alert("GeoJSON has 0 features"); return; }
-  console.log("[Map] Features:", features.length);
+  }catch(e){
+    alert("Could not load GeoJSON");
+    console.error(e);
+    return;
+  }
+  if (!allFeatures.length){
+    alert("GeoJSON has 0 features");
+    return;
+  }
 
-  detectKeys(features);
+  // detect actual keys present in this GeoJSON
+  detectKeys(allFeatures);
+
+  // Filter to only your 6 states (if possible)
+  let features = allFeatures.filter(f =>
+    ALLOWED_STATES.has(String(f.properties?.[STATE_KEY] || "").trim())
+  );
+  if (!features.length){
+    console.warn("[Map] No features matched ALLOWED_STATES, using all features as fallback");
+    features = allFeatures;
+  }
+
+  console.log("[Map] Features used:", features.length);
 
   const fc = { type:"FeatureCollection", features };
   const projection = pickProjection(fc);
@@ -176,8 +203,8 @@ async function drawMap(svgId){
     .attr("fill", "url(#diagonalHatch)")
     .attr("stroke", "#666").attr("stroke-width", 0.7);
 
-  // --- hover tooltip (only for configured districts) ---
-  const allowed = new Set((window.subdivisions || []).map(r => norm(r.name)));
+  // --- hover tooltip (only for our configured districts) ---
+  const allowedNames = new Set((window.subdivisions || []).map(r => norm(r.name)));
   const tooltip = ensureTooltip();
 
   paths
@@ -185,9 +212,9 @@ async function drawMap(svgId){
     .on("pointermove", function(event, d){
       const raw = d?.properties?.[MATCH_KEY] ?? "";
       const key = norm(raw);
-      if (!allowed.has(key)) { tooltip.style("opacity", 0); return; }
+      if (!allowedNames.has(key)) { tooltip.style("opacity", 0); return; }
 
-      const pad = 14, vw = window.innerWidth, vh = window.innerHeight, ttW = 200, ttH = 44;
+      const pad = 14, vw = window.innerWidth, vh = window.innerHeight, ttW = 220, ttH = 44;
       let x = event.clientX + pad, y = event.clientY + pad;
       if (x + ttW > vw) x = vw - ttW - pad;
       if (y + ttH > vh) y = vh - ttH - pad;
@@ -196,9 +223,9 @@ async function drawMap(svgId){
              .style("left", x + "px").style("top", y + "px");
     })
     .on("pointerleave", function(){ tooltip.style("opacity", 0); })
-    .style("cursor", d => allowed.has(norm(d?.properties?.[MATCH_KEY] ?? "")) ? "pointer" : "default");
+    .style("cursor", d => allowedNames.has(norm(d?.properties?.[MATCH_KEY] ?? "")) ? "pointer" : "default");
 
-  // index & group by MATCH_KEY (district name)
+  // index & group by district name (MATCH_KEY)
   const idx = new Map(), groups = new Map();
   paths.each(function(d){
     const key = norm(String(d.properties?.[MATCH_KEY] ?? ""));
@@ -208,13 +235,12 @@ async function drawMap(svgId){
   });
   indexByGroup[svgId] = idx;
 
-  // projected centroid per group (kept but currently unused – no icons)
+  // projected centroid per group (kept for future icons, but not used now)
   groupCentroid[svgId] = {};
   const gp = d3.geoPath(projection);
   groups.forEach((arr, key) => {
     const groupFC = { type: "FeatureCollection", features: arr };
     let [x, y] = gp.centroid(groupFC);
-    const off = ICON_OFFSETS[key]; if (off) { x += off.dx||0; y += off.dy||0; }
     if (Number.isFinite(x) && Number.isFinite(y)) groupCentroid[svgId][key] = [x,y];
   });
 
@@ -229,7 +255,7 @@ async function drawMap(svgId){
   }
 }
 
-/* ---------- Forecast table (Districts) ---------- */
+/* ---------- Forecast table (districts) ---------- */
 function buildFixedTable(){
   const tbody = document.getElementById("forecast-table-body");
   if (!tbody) return;
@@ -280,6 +306,7 @@ function buildFixedTable(){
           o.value = opt; o.textContent = opt;
           sel.appendChild(o);
         });
+        sel.classList.add("select-clean"); // optional styling if you want
         sel.addEventListener("change", () => {
           updateMapColors();
         });
@@ -311,7 +338,7 @@ function highlight(label, on){
 
 /* ---------- coloring + colored selects (NO ICONS) ---------- */
 function updateMapColors(){
-  const pal   = window.forecastColors || {};
+  const pal = window.forecastColors || {};
 
   const rows = Array.from(document.querySelectorAll("#forecast-table-body tr")).map(tr => {
     const subdiv = tr.dataset.subdiv;
@@ -336,19 +363,23 @@ function updateMapColors(){
 
     rows.forEach(rec => {
       const nodes = idxMap.get(rec.key);
-      if (!nodes) { console.warn("[No match]", rec.raw); return; }
+      if (!nodes) {
+        // District name might be slightly different in GeoJSON; that’s ok.
+        console.warn("[No match on map for]", rec.raw);
+        return;
+      }
       const color = pal[rec[dayKey]] || "#eee";
       nodes.forEach(n => n.setAttribute("fill", color));
     });
 
-    // icon-layer kept but left empty (no circles / text)
+    // icon-layer kept but empty
     const gIcons = ensureLayer(svg, "icon-layer").style("pointer-events","none");
     gIcons.raise();
-    gIcons.selectAll("*").remove(); // ensure nothing is drawn
+    gIcons.selectAll("*").remove();
   });
 }
 
-/* ---------- Print notes mirroring (PDF: notes under table) ---------- */
+/* ---------- Print notes mirroring (only if you have #notes-print) ---------- */
 function wirePrintNotesMirror(){
   const live = document.getElementById('notes');
   const ghost = document.getElementById('notes-print');
