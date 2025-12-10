@@ -5,11 +5,47 @@
   <title>Cloud Coverage Forecast Bulletin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+
   <!-- D3 + TopoJSON -->
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+
+  <style>
+    /* Navigation Bar Styling (matches Fog Bulletin) */
+    .nav-btn {
+      padding: .4rem .9rem;
+      border-radius: .7rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .nav-btn.active {
+      background:#111827;
+      color:#f9fafb;
+    }
+  </style>
 </head>
+
 <body>
+
+  <!-- 🌥️ TOP NAVIGATION BAR (Added) -->
+  <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
+    <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
+      
+      <!-- Left Title -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">🌥️</span>
+        <span style="font-size:16px; font-weight:800; letter-spacing:0.5px;">Cloud Bulletin</span>
+      </div>
+
+      <!-- Right Buttons -->
+      <div style="display:flex; gap:6px;">
+        <a href="../index.html" class="nav-btn bg-white">fog</a>
+        <a href="index.html" class="nav-btn active">cloud</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
   <div class="container">
 
     <!-- Page 1 -->
@@ -62,7 +98,7 @@
         </div>
       </div>
 
-      <!-- PRINT-ONLY Notes directly under table -->
+      <!-- PRINT-ONLY Notes -->
       <div id="notes-print-card" class="card print-only">
         <h3>Dialog / Notes</h3>
         <textarea id="notes-print" class="notes-box" readonly></textarea>
@@ -82,7 +118,7 @@
       </div>
     </section>
 
-    <!-- Page 3 (screen notes; hidden in PDF) -->
+    <!-- Page 3 (screen only notes) -->
     <section id="page3" class="print-page">
       <div class="card">
         <h3>Dialog / Notes</h3>
@@ -92,8 +128,9 @@
 
   </div>
 
-  <!-- Load data first, then app -->
+  <!-- Load Data + Logic -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+
 </body>
 </html>
