@@ -1,6 +1,16 @@
-// === Fog Bulletin (No Map Version) ===
+// === Fog Bulletin – table-only version with colors + filter ===
 
-// Build fog classification table
+// ---- helper: color a Day1/Day2 <select> based on its label ----
+function colorizeSelect(sel, label){
+  const pal = window.forecastColors || {};
+  const c   = pal[label] || "#ffffff";
+
+  sel.style.backgroundColor = c;
+  sel.style.color = "#000";
+  sel.style.borderColor = "#000";
+}
+
+// ---- Fog classification table (top card) ----
 function buildCloudTable(){
   const table = document.getElementById("cloudTable");
   if (!table) return;
@@ -24,7 +34,7 @@ function buildCloudTable(){
   });
 }
 
-// Build district forecast table (Day1 / Day2)
+// ---- Forecast table (Districts with Day1/Day2 selects) ----
 function buildFixedTable(){
   const tbody = document.getElementById("forecast-table-body");
   if (!tbody) return;
@@ -44,17 +54,33 @@ function buildFixedTable(){
   for (const [state, rows] of byState) {
     rows.forEach((row, j) => {
       const tr = document.createElement("tr");
+      tr.dataset.state  = state;
+      tr.dataset.subdiv = row.name;
 
-      tr.innerHTML = `
-        <td>${i++}</td>
-        ${j === 0 ? `<td rowspan="${rows.length}">${state}</td>` : ""}
-        <td>${row.name}</td>
-        <td data-col="day1"></td>
-        <td data-col="day2"></td>
-      `;
+      // S. No.
+      const tdNo = document.createElement("td");
+      tdNo.textContent = i++;
+      tr.appendChild(tdNo);
 
-      const td1 = tr.querySelector('td[data-col="day1"]');
-      const td2 = tr.querySelector('td[data-col="day2"]');
+      // State (rowspan for group)
+      if (j === 0) {
+        const tdState = document.createElement("td");
+        tdState.textContent = state;
+        tdState.rowSpan = rows.length;
+        tdState.style.verticalAlign = "middle";
+        tr.appendChild(tdState);
+      }
+
+      // District
+      const tdDist = document.createElement("td");
+      tdDist.textContent = row.name;
+      tr.appendChild(tdDist);
+
+      // Day 1 + Day 2 cells
+      const td1 = document.createElement("td");
+      const td2 = document.createElement("td");
+      td1.setAttribute("data-col","day1");
+      td2.setAttribute("data-col","day2");
 
       const s1 = document.createElement("select");
       const s2 = document.createElement("select");
@@ -67,17 +93,75 @@ function buildFixedTable(){
           sel.appendChild(o);
         });
         sel.classList.add("select-clean");
+
+        // initial color
+        colorizeSelect(sel, sel.value);
+
+        // when changed → recolor & re-apply filter
+        sel.addEventListener("change", () => {
+          colorizeSelect(sel, sel.value);
+          applyFogFilter();
+        });
       });
 
       td1.appendChild(s1);
       td2.appendChild(s2);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
 
       tbody.appendChild(tr);
     });
   }
 }
 
-// Notes mirror (if printing)
+// ---- Filter: show only rows matching selected fog category ----
+function initFogFilter(){
+  const sel = document.getElementById("fog-filter");
+  if (!sel) return;
+
+  // build options: "All conditions" + actual categories from data.js
+  sel.innerHTML = "";
+  const optAll = document.createElement("option");
+  optAll.value = "";
+  optAll.textContent = "All conditions";
+  sel.appendChild(optAll);
+
+  (window.forecastOptions || []).forEach(label => {
+    const o = document.createElement("option");
+    o.value = label;
+    o.textContent = label;
+    sel.appendChild(o);
+  });
+
+  sel.addEventListener("change", applyFogFilter);
+}
+
+// called whenever dropdown or Day1/Day2 changes
+function applyFogFilter(){
+  const sel = document.getElementById("fog-filter");
+  if (!sel) return;
+
+  const target = sel.value;  // "" = show all
+
+  const rows = document.querySelectorAll("#forecast-table-body tr");
+  rows.forEach(tr => {
+    if (!target) {
+      tr.style.display = "";  // reset, show all
+      return;
+    }
+
+    const d1Sel = tr.querySelector('td[data-col="day1"] select');
+    const d2Sel = tr.querySelector('td[data-col="day2"] select');
+    const d1 = d1Sel ? d1Sel.value : "";
+    const d2 = d2Sel ? d2Sel.value : "";
+
+    // Show row if Day1 OR Day2 equals selected fog category
+    const match = (d1 === target) || (d2 === target);
+    tr.style.display = match ? "" : "none";
+  });
+}
+
+// ---- Notes mirror for print (optional; safe if #notes-print missing) ----
 function wirePrintNotesMirror(){
   const live = document.getElementById('notes');
   const ghost = document.getElementById('notes-print');
@@ -89,11 +173,13 @@ function wirePrintNotesMirror(){
   sync();
 }
 
-// INIT
+// ---- INIT ----
 function init(){
   if (typeof updateISTDate === "function") updateISTDate();
   buildCloudTable();
   buildFixedTable();
+  initFogFilter();   // populate & wire filter
+  applyFogFilter();  // initial (show all)
   wirePrintNotesMirror();
 }
 
