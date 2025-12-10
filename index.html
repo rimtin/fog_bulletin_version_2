@@ -2,28 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>🌫️ Bulletin – Home</title>
+  <title>🌫️ Fog Bulletin – Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Tailwind -->
+  <!-- Tailwind (used only for layout helpers) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap');
-    body { font-family: 'Nunito', sans-serif; }
-    .shadow-soft{box-shadow:0 10px 25px -5px rgba(0,0,0,.10),0 10px 10px -5px rgba(0,0,0,.04)}
-    .gradient-text{
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      -webkit-background-clip:text;
-      background-clip:text;
-      -webkit-text-fill-color:transparent
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #ffffff;
+      color: #111827;
     }
-    .nav-btn{padding:.5rem 1rem;border-radius:.75rem;font-weight:600}
-    .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
-    .tbl th,.tbl td{color:#111827}
 
-    /* ================= Fog Classification Table ================= */
-    .fog-table {
+    .shadow-soft {
+      box-shadow:0 8px 18px -6px rgba(0,0,0,.12);
+    }
+
+    .nav-btn {
+      padding: .4rem .9rem;
+      border-radius: .7rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .nav-btn.active {
+      background:#111827;
+      color:#f9fafb;
+    }
+
+    /* ========== Common table frame style (matches your reference) ========== */
+    .frame-table {
       width: 100%;
       border-collapse: collapse;
       border-radius: 16px;
@@ -31,150 +40,141 @@
       border: 3px solid #000;
       font-size: 0.9rem;
     }
-    .fog-table thead th {
-      background-color: #8fd3ff;
+    .frame-table thead th {
+      background-color: #8fd3ff; /* header band */
       color: #000;
       font-weight: 700;
       text-align: center;
       padding: 0.5rem;
       border: 2px solid #000;
     }
-    .fog-table tbody td {
+    .frame-table tbody td {
       text-align: center;
       padding: 0.4rem 0.5rem;
       border: 2px solid #000;
     }
 
-    /* ================= Forecast Table (Day 1 & Day 2) ================= */
-    .forecast-table {
-      width: 100%;
-      border-collapse: collapse;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 3px solid #000;
-      font-size: 0.9rem;
-    }
-    .forecast-table thead th {
-      background-color: #8fd3ff;
-      color: #000;
-      font-weight: 700;
-      text-align: center;
-      padding: 0.5rem;
-      border: 2px solid #000;
-    }
-    .forecast-table tbody td {
-      text-align: center;
-      padding: 0.4rem 0.5rem;
-      border: 2px solid #000;
+    /* Fog classification uses same frame-table */
+    .fog-table   { }
+    .forecast-table { }
+
+    /* Clean select style inside cells */
+    .select-clean {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right .6rem center;
+      background-size: 14px 14px;
+      padding-right: 2rem;
+      border: 1px solid #111827;
+      border-radius: 10px;
+      color: #111827;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
     }
 
-    /* Clean Select Styling */
-    .select-clean{
-      appearance:none;
-      -webkit-appearance:none;
-      -moz-appearance:none;
-      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='%23111827' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-      background-repeat:no-repeat;
-      background-position:right .6rem center;
-      background-size:14px 14px;
-      padding-right:2rem;
-      border:1px solid #e5e7eb;
-      border-radius:10px;
-      box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);
-      color:#111827;
-      padding:0.35rem 0.6rem;
-      font-size:0.875rem;
+    textarea {
+      resize: vertical;
+    }
+
+    @media print {
+      nav { display: none; }
+      body { margin: 0; }
+      main { max-width: 100%; padding: 0 20px; }
+      button#print-btn { display:none; }
     }
   </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 min-h-screen">
+<body class="min-h-screen">
 
-  <!-- Navigation -->
-  <nav class="max-w-6xl mx-auto px-4 mt-6">
-    <div class="bg-white shadow-soft rounded-2xl px-5 py-3 flex items-center justify-between">
+  <!-- Top navigation (simple, thin) -->
+  <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
+    <div class="bg-white shadow-soft rounded-2xl px-4 py-2 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="text-2xl">🌫️</span>
-        <span class="text-lg font-extrabold gradient-text"> Bulletin</span>
+        <span class="text-xl">🌫️</span>
+        <span class="text-base font-extrabold tracking-wide">Fog Bulletin</span>
       </div>
-      <a href="index.html"  class="nav-btn active">Fog</a>
-        <a href="cloud/index.html" class="nav-btn bg-white shadow-sm">cloud</a>
-
-      
+      <div class="flex gap-1">
+        <a href="index.html"           class="nav-btn active">fog</a>
+        <a href="cloud/index.html"  class="nav-btn bg-white">cloud</a>
+       
       </div>
-    </div><div class="flex gap-2">
-        
+    </div>
   </nav>
 
-  <main class="max-w-6xl mx-auto px-4 py-8">
+  <main class="max-w-6xl mx-auto px-4 pb-10">
 
-    <!-- Page Header -->
-    <header class="bg-white shadow-soft rounded-3xl p-6 mb-8">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="text-center md:text-left">
-          <h1 class="text-3xl md:text-4xl font-extrabold gradient-text">Fog Forecast Bulletin</h1>
-          <p class="text-gray-700 mt-1">Forecast Date: <span id="forecast-date">—</span></p>
-        </div>
-        <button onclick="window.print()"
-          class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl shadow-soft">
-          ⬇️ Download PDF
-        </button>
-      </div>
+    <!-- Bulletin header (centered, print-like) -->
+    <header class="text-center mt-4 mb-6">
+      <h1 class="text-2xl font-extrabold uppercase tracking-wide">
+        Fog Forecast Bulletin
+      </h1>
+      <p class="mt-1 text-sm">
+        Forecast Date:
+        <span id="forecast-date" class="font-semibold">—</span>
+      </p>
+      <button id="print-btn"
+        onclick="window.print()"
+        class="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-black text-white text-xs shadow-soft">
+        ⬇️ Download / Print PDF
+      </button>
     </header>
 
     <!-- Fog Classification Table -->
-    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
-      <h3 class="text-xl font-bold text-gray-900 mb-4">Fog Classification</h3>
-      <div class="overflow-x-auto">
-        <table id="cloudTable" class="fog-table">
-          <thead>
-            <tr>
-              <th>S. No.</th>
-              <th>Visibility Range</th>
-              <th>Fog Category</th>
-              <th>Sky &amp; GHI</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <p class="mt-3 text-gray-600 text-sm">
+    <section class="mb-6">
+      <h2 class="text-base font-bold mb-2">Fog Classification</h2>
+      <table id="cloudTable" class="frame-table fog-table">
+        <thead>
+          <tr>
+            <th>S. No.</th>
+            <th>Visibility Range</th>
+            <th>Fog Category</th>
+            <th>Sky &amp; GHI</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="mt-1 text-xs text-gray-600">
         <strong>Note:</strong> This fog terminology is for local use only.
       </p>
     </section>
 
-    <!-- District Forecast Table -->
-    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4">
-        <h3 class="text-xl font-bold text-gray-900">Forecast (Day 1 &amp; Day 2)</h3>
-        <div class="flex items-center gap-2 text-sm">
-          <span class="text-gray-700">Filter:</span>
+    <!-- Forecast Table (Day 1 & Day 2) -->
+    <section class="mb-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+        <h2 class="text-base font-bold">Forecast (Day 1 &amp; Day 2)</h2>
+        <div class="flex items-center gap-2 text-xs">
+          <span>Filter:</span>
           <select id="fog-filter" class="select-clean"></select>
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="forecast-table">
-          <thead>
-            <tr>
-              <th>S. No.</th>
-              <th>State</th>
-              <th>District</th>
-              <th>Day 1</th>
-              <th>Day 2</th>
-            </tr>
-          </thead>
-          <tbody id="forecast-table-body"></tbody>
-        </table>
-      </div>
+      <table class="frame-table forecast-table">
+        <thead>
+          <tr>
+            <th>S. No.</th>
+            <th>State</th>
+            <th>District</th>
+            <th>Day 1</th>
+            <th>Day 2</th>
+          </tr>
+        </thead>
+        <tbody id="forecast-table-body"></tbody>
+      </table>
     </section>
 
     <!-- Notes -->
-    <section class="bg-white shadow-soft rounded-3xl p-6 mb-8">
-      <h3 class="text-xl font-bold mb-3 text-gray-900">Notes</h3>
+    <section class="mb-4">
+      <h2 class="text-base font-bold mb-1">Notes</h2>
       <textarea id="notes"
-        class="w-full h-32 rounded-xl border border-gray-200 p-3 text-gray-800 placeholder-gray-400"
+        class="w-full h-24 border border-gray-400 rounded-md p-2 text-sm"
         placeholder="Add your notes here..."></textarea>
+
+      <!-- Optional hidden textarea for print mirroring, if you want -->
+      <textarea id="notes-print" style="display:none;"></textarea>
     </section>
 
   </main>
