@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>🌫️ Bulletin – Home</title>
+  <title>🌫️ Fog Bulletin – Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Tailwind -->
@@ -22,17 +22,17 @@
     .nav-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
     .tbl th,.tbl td{color:#111827}
 
-    /* ================= Fog Classification Table (Rounded, Thick Border) ================= */
+    /* ================= Fog Classification Table ================= */
     .fog-table {
       width: 100%;
       border-collapse: collapse;
       border-radius: 16px;
-      overflow: hidden;               /* ensures rounded corners apply */
+      overflow: hidden;
       border: 3px solid #000;
       font-size: 0.9rem;
     }
     .fog-table thead th {
-      background-color: #8fd3ff;      /* sky blue strip */
+      background-color: #8fd3ff;
       color: #000;
       font-weight: 700;
       text-align: center;
@@ -40,6 +40,29 @@
       border: 2px solid #000;
     }
     .fog-table tbody td {
+      text-align: center;
+      padding: 0.4rem 0.5rem;
+      border: 2px solid #000;
+    }
+
+    /* ================= Forecast Table (Day 1 & Day 2) ================= */
+    .forecast-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid #000;
+      font-size: 0.9rem;
+    }
+    .forecast-table thead th {
+      background-color: #8fd3ff;
+      color: #000;
+      font-weight: 700;
+      text-align: center;
+      padding: 0.5rem;
+      border: 2px solid #000;
+    }
+    .forecast-table tbody td {
       text-align: center;
       padding: 0.4rem 0.5rem;
       border: 2px solid #000;
@@ -75,9 +98,10 @@
         <span class="text-lg font-extrabold gradient-text">Fog Bulletin</span>
       </div>
       <div class="flex gap-2">
-        <a href="index.html"  class="nav-btn active">fog</a>
-        <a href="cloud/index.html"  class="nav-btn bg-white shadow-sm">cloud</a>
-
+        <a href="index.html"  class="nav-btn active">home</a>
+        <a href="../cloud/index.html" class="nav-btn bg-white shadow-sm">cloud</a>
+        <a href="daily.html"  class="nav-btn bg-white shadow-sm">daily</a>
+        <a href="hourly.html" class="nav-btn bg-white shadow-sm">hourly</a>
       </div>
     </div>
   </nav>
@@ -89,9 +113,7 @@
       <div class="flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="text-center md:text-left">
           <h1 class="text-3xl md:text-4xl font-extrabold gradient-text">Fog Forecast Bulletin</h1>
-          <p class="text-gray-700 mt-1">
-            Forecast Date: <span id="forecast-date">—</span>
-          </p>
+          <p class="text-gray-700 mt-1">Forecast Date: <span id="forecast-date">—</span></p>
         </div>
         <button onclick="window.print()"
           class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl shadow-soft">
@@ -132,14 +154,14 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="tbl min-w-full text-sm">
-          <thead class="bg-gray-100">
+        <table class="forecast-table">
+          <thead>
             <tr>
-              <th class="px-3 py-2">S. No.</th>
-              <th class="px-3 py-2">State</th>
-              <th class="px-3 py-2">District</th>
-              <th class="px-3 py-2">Day 1</th>
-              <th class="px-3 py-2">Day 2</th>
+              <th>S. No.</th>
+              <th>State</th>
+              <th>District</th>
+              <th>Day 1</th>
+              <th>Day 2</th>
             </tr>
           </thead>
           <tbody id="forecast-table-body"></tbody>
