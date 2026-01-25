@@ -20,17 +20,45 @@
       border-radius: .7rem;
       font-weight: 600;
       font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .nav-btn.active {
       background:#111827;
       color:#f9fafb;
+    }
+
+    /* ✅ PDF/PRINT FIXES (prevents table cut & overflow) */
+    @media print {
+      body, .container, #pdf-area { overflow: visible !important; }
+      .table-wrap { overflow: visible !important; }
+
+      table { width: 100% !important; max-width: 100% !important; }
+      th[style], td[style] { width: auto !important; }
+
+      .data-table, .cloud-table {
+        table-layout: fixed !important;
+      }
+
+      th, td {
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+
+      .data-table th, .data-table td,
+      .cloud-table th, .cloud-table td {
+        padding: 6px 6px !important;
+        font-size: 12px !important;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- 🌥️ TOP NAVIGATION BAR (Added) -->
+  <!-- 🌥️ TOP NAVIGATION BAR -->
   <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
     <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
 
@@ -48,7 +76,7 @@
     </div>
   </nav>
 
-  <!-- Main Container -->
+  <!-- Main Container (PDF area) -->
   <div class="container" id="pdf-area">
 
     <!-- Page 1 -->
@@ -59,7 +87,7 @@
           <div class="subhead">Forecast Date: <span id="forecast-date">—</span></div>
         </div>
         <div class="actions">
-          <!-- ✅ Changed from window.print() -->
+          <!-- ✅ html2pdf download -->
           <button class="btn screen-only" onclick="downloadPDF()">Download PDF</button>
         </div>
       </header>
@@ -73,7 +101,7 @@
               <tr>
                 <th style="width:72px">S. No.</th>
                 <th style="width:170px">Sky Covered by clouds</th>
-                <th style="width:240px">Cloud Cover</th>
+                <th style="width:220px">Cloud Cover</th>
                 <th>Cloud Type</th>
               </tr>
             </thead>
@@ -88,13 +116,22 @@
         <h3>Sub-Division Forecast (Day 1 & Day 2)</h3>
         <div class="table-wrap">
           <table class="data-table">
+            <!-- ✅ Use colgroup so the table fits A4 nicely -->
+            <colgroup>
+              <col style="width:72px" />
+              <col style="width:200px" />
+              <col style="width:auto" />
+              <col style="width:190px" />
+              <col style="width:190px" />
+            </colgroup>
+
             <thead>
               <tr>
-                <th style="width:72px">S. No.</th>
-                <th style="width:240px">State</th>
+                <th>S. No.</th>
+                <th>State</th>
                 <th>Sub Division</th>
-                <th style="width:260px">Day 1</th>
-                <th style="width:260px">Day 2</th>
+                <th>Day 1</th>
+                <th>Day 2</th>
               </tr>
             </thead>
             <tbody id="forecast-table-body"></tbody>
@@ -122,7 +159,7 @@
       </div>
     </section>
 
-    <!-- Page 3 (screen only notes) -->
+    <!-- Page 3 (screen notes) -->
     <section id="page3" class="print-page">
       <div class="card">
         <h3>Dialog / Notes</h3>
@@ -136,7 +173,7 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ✅ Optimized PDF Export (fast + small size) -->
+  <!-- ✅ Optimized PDF Export (fast + small + no cut tables) -->
   <script>
     function downloadPDF() {
       // Copy notes (screen) -> print-only notes textarea
@@ -151,10 +188,10 @@
         margin: 0.25,
         filename: "Cloud_Forecast_Bulletin.pdf",
 
-        // ✅ reduce size
+        // ✅ Smaller size
         image: { type: "jpeg", quality: 0.72 },
 
-        // ✅ reduce render time + size
+        // ✅ Faster render + smaller output
         html2canvas: {
           scale: 1.2,
           useCORS: true,
@@ -162,7 +199,7 @@
           logging: false
         },
 
-        // ✅ compression ON
+        // ✅ Compression ON
         jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
 
         pagebreak: { mode: ["css", "avoid-all", "legacy"] }
