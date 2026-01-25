@@ -15,16 +15,8 @@
 
   <style>
     /* Navigation Bar */
-    .nav-btn {
-      padding: .4rem .9rem;
-      border-radius: .7rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .nav-btn.active {
-      background:#111827;
-      color:#f9fafb;
-    }
+    .nav-btn { padding:.4rem .9rem; border-radius:.7rem; font-weight:600; font-size:.9rem; }
+    .nav-btn.active { background:#111827; color:#f9fafb; }
 
     /* ==================================================
        ✅ NEXT-LINE LOGIC (PDF SAFE)
@@ -38,23 +30,37 @@
 
     body.pdf-mode th,
     body.pdf-mode td {
-      white-space: normal !important;      /* allow wrapping */
-      word-break: break-word !important;   /* break long words */
-      overflow-wrap: anywhere !important;  /* force wrap */
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
       line-height: 1.25 !important;
       box-sizing: border-box !important;
     }
 
-    /* Prevent horizontal overflow */
-    body.pdf-mode .table-wrap {
-      overflow-x: hidden !important;
-    }
+    body.pdf-mode .table-wrap { overflow-x: hidden !important; }
 
     /* Slightly tighter only for PDF */
     body.pdf-mode th,
     body.pdf-mode td {
       font-size: 12px !important;
       padding: 6px 6px !important;
+    }
+
+    /* ==================================================
+       ✅ FIX TILTED / WARPED PDF PAGES
+       Disable transform/filter/shadows during export
+       ================================================== */
+    body.pdf-mode *,
+    body.pdf-mode *::before,
+    body.pdf-mode *::after {
+      transform: none !important;
+      filter: none !important;
+      perspective: none !important;
+      box-shadow: none !important;
+    }
+
+    body.pdf-mode {
+      overflow: visible !important;
     }
   </style>
 </head>
@@ -104,9 +110,9 @@
           <table class="cloud-table" id="cloudTable">
             <thead>
               <tr>
-                <th>S. No.</th>
-                <th>Sky Covered by clouds</th>
-                <th>Cloud Cover</th>
+                <th style="width:72px">S. No.</th>
+                <th style="width:170px">Sky Covered by clouds</th>
+                <th style="width:240px">Cloud Cover</th>
                 <th>Cloud Type</th>
               </tr>
             </thead>
@@ -122,11 +128,11 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>S. No.</th>
-                <th>State</th>
+                <th style="width:72px">S. No.</th>
+                <th style="width:240px">State</th>
                 <th>Sub Division</th>
-                <th>Day 1</th>
-                <th>Day 2</th>
+                <th style="width:260px">Day 1</th>
+                <th style="width:260px">Day 2</th>
               </tr>
             </thead>
             <tbody id="forecast-table-body"></tbody>
@@ -143,13 +149,13 @@
 
     <!-- PAGE 2 -->
     <section class="print-page">
-      <div class="map-card">
-        <h4>Map – Day 1</h4>
+      <div class="map-card page-break-avoid">
+        <h4>Map 1 – Projection of Division Weather Forecast (Day 1)</h4>
         <svg id="indiaMapDay1" viewBox="0 0 860 580" width="100%" height="420"></svg>
       </div>
 
-      <div class="map-card">
-        <h4>Map – Day 2</h4>
+      <div class="map-card page-break-avoid">
+        <h4>Map 2 – Projection of Division Weather Forecast (Day 2)</h4>
         <svg id="indiaMapDay2" viewBox="0 0 860 580" width="100%" height="420"></svg>
       </div>
     </section>
@@ -158,8 +164,7 @@
     <section class="print-page">
       <div class="card">
         <h3>Dialog / Notes</h3>
-        <textarea id="notes" class="notes-box"
-          placeholder="Add your notes here..."></textarea>
+        <textarea id="notes" class="notes-box" placeholder="Add your notes here..."></textarea>
       </div>
     </section>
 
@@ -176,22 +181,26 @@
       const notes = document.getElementById("notes");
       const notesPrint = document.getElementById("notes-print");
 
+      // Copy notes and expand height so full text is captured
       if (notes && notesPrint) {
         notesPrint.value = notes.value || "";
         notesPrint.style.height = "auto";
-        notesPrint.style.height = notesPrint.scrollHeight + "px";
+        notesPrint.style.height = (notesPrint.scrollHeight || 0) + "px";
       }
 
+      // Enable PDF mode (wrap text + remove transforms to stop tilt)
       document.body.classList.add("pdf-mode");
 
-      html2pdf().set({
+      const opt = {
         margin: 0.3,
         filename: "Cloud_Forecast_Bulletin.pdf",
         image: { type: "jpeg", quality: 0.75 },
         html2canvas: {
           scale: 1.2,
           useCORS: true,
-          backgroundColor: "#ffffff"
+          backgroundColor: "#ffffff",
+          logging: false,
+          scrollY: 0
         },
         jsPDF: {
           unit: "in",
@@ -199,11 +208,16 @@
           orientation: "portrait",
           compress: true
         }
-      }).from(document.getElementById("pdf-area")).save()
-        .finally(() => {
-          document.body.classList.remove("pdf-mode");
-          if (notesPrint) notesPrint.style.height = "";
-        });
+      };
+
+      // ✅ WAIT a moment so pdf-mode CSS fully applies before capture
+      setTimeout(() => {
+        html2pdf().set(opt).from(document.getElementById("pdf-area")).save()
+          .finally(() => {
+            document.body.classList.remove("pdf-mode");
+            if (notesPrint) notesPrint.style.height = "";
+          });
+      }, 120);
     }
   </script>
 
