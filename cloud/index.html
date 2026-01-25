@@ -57,14 +57,14 @@
       word-break: break-word !important;
     }
 
-    /* ✅ Make table headers repeat if table breaks onto next page */
+    /* ✅ Repeat header if a table breaks onto next page */
     @media print {
       table thead { display: table-header-group !important; }
       table tfoot { display: table-footer-group !important; }
       table, tr, td, th { page-break-inside: avoid !important; }
     }
 
-    /* ✅ Replacement pill (for select -> text) ONLY during PDF */
+    /* ✅ Replacement pill (select -> text) ONLY during PDF */
     .pdf-pill {
       display: inline-block;
       width: 100%;
@@ -76,6 +76,18 @@
       background: #6fd0ff;
       color: #0b1b24;
       box-sizing: border-box;
+    }
+
+    /* ✅ Hidden staging area for PDF clone (does not affect layout) */
+    #pdf-staging {
+      position: fixed;
+      left: -99999px;
+      top: 0;
+      width: 794px; /* A4-ish width */
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: -1;
     }
   </style>
 </head>
@@ -182,43 +194,53 @@
     </section>
 
   </div>
+  <!-- ✅ END pdf-area (IMPORTANT: keep scripts OUTSIDE this div) -->
+
+  <!-- Hidden staging container for PDF clone -->
+  <div id="pdf-staging" aria-hidden="true"></div>
 
   <!-- Load Data + Logic -->
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ✅ PDF Export Fix (fit table + show dropdown values + show full notes) -->
+  <!-- ✅ PDF Export Fix (fit table + show dropdown values + show full notes + remove stray HTML/scripts) -->
   <script>
     function downloadPDF() {
-      // Copy notes (screen) -> print-only textarea
+      const original = document.getElementById("pdf-area");
+      if (!original) { alert("PDF area not found!"); return; }
+
+      // Copy notes (screen) -> print-only textarea (inside the ORIGINAL, so clone includes it)
       const notes = document.getElementById("notes");
       const notesPrint = document.getElementById("notes-print");
-
       if (notes && notesPrint) {
         notesPrint.value = notes.value || "";
-
-        // ✅ IMPORTANT: expand textarea height so full text is captured
+        // Expand so html2canvas captures full text (textarea is scrollable otherwise)
         notesPrint.style.height = "auto";
         notesPrint.style.height = (notesPrint.scrollHeight || 0) + "px";
       }
 
-      const element = document.getElementById("pdf-area");
-      if (!element) { alert("PDF area not found!"); return; }
-
-      // ✅ Turn on PDF mode (only affects export)
+      // Enable PDF mode (only affects export styling)
       document.body.classList.add("pdf-mode");
 
-      // ✅ Replace selects with pills so the selected values appear in PDF
-      const replaced = [];
-      element.querySelectorAll("select").forEach(sel => {
+      // --- Create a clean clone for PDF ---
+      const clone = original.cloneNode(true);
+
+      // Safety: remove any script/style if they ever appear inside the clone
+      clone.querySelectorAll("script, style").forEach(n => n.remove());
+
+      // Replace selects with pills inside the CLONE (so PDF shows selection)
+      clone.querySelectorAll("select").forEach(sel => {
         const pill = document.createElement("div");
         pill.className = "pdf-pill";
         pill.textContent = sel.value || sel.options?.[sel.selectedIndex]?.text || "";
-
-        replaced.push({ select: sel, pill });
         sel.style.display = "none";
         sel.parentNode.appendChild(pill);
       });
+
+      // Stage the clone offscreen (so styles apply) — does NOT affect layout
+      const staging = document.getElementById("pdf-staging");
+      staging.innerHTML = "";
+      staging.appendChild(clone);
 
       const opt = {
         margin: 0.25,
@@ -237,27 +259,17 @@
 
       html2pdf()
         .set(opt)
-        .from(element)
+        .from(clone)
         .save()
         .then(() => {
-          // Restore UI
-          replaced.forEach(({ select, pill }) => {
-            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
-            if (select) select.style.display = "";
-          });
-
-          // Restore textarea height
+          // Cleanup + restore
+          staging.innerHTML = "";
           if (notesPrint) notesPrint.style.height = "";
-
           document.body.classList.remove("pdf-mode");
         })
         .catch(() => {
-          // Restore even if export fails
-          replaced.forEach(({ select, pill }) => {
-            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
-            if (select) select.style.display = "";
-          });
-
+          // Cleanup + restore even if export fails
+          staging.innerHTML = "";
           if (notesPrint) notesPrint.style.height = "";
           document.body.classList.remove("pdf-mode");
         });
