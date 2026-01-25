@@ -221,6 +221,25 @@ table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixe
     border-right:3px solid #000 !important; /* right frame line */
   }
 
+  /* ✅✅ PDF FIX FOR NOTES (prevents "only first line" issue) */
+  .notes-box{
+    height:auto !important;
+    max-height:none !important;
+    min-height:0 !important;
+
+    overflow:visible !important;   /* IMPORTANT: no clipping in html2pdf */
+    resize:none !important;        /* PDF doesn't handle resize well */
+
+    white-space:pre-wrap !important;
+    word-break:break-word !important;
+  }
+
+  /* if any parent wrapper clips the notes, force visible */
+  #notes-print-card,
+  #notes-print-card *{
+    overflow:visible !important;
+  }
+
   .print-page{ break-after:page; page-break-after:always; }
   .screen-only{ display:none !important; }
   svg{ shape-rendering:crispEdges; }
