@@ -10,6 +10,9 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 
+  <!-- ✅ html2pdf (FAST + SMALL PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
     /* Navigation Bar Styling (matches Fog Bulletin) */
     .nav-btn {
@@ -30,7 +33,7 @@
   <!-- 🌥️ TOP NAVIGATION BAR (Added) -->
   <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
     <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
-      
+
       <!-- Left Title -->
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:20px;">🌥️</span>
@@ -46,7 +49,7 @@
   </nav>
 
   <!-- Main Container -->
-  <div class="container">
+  <div class="container" id="pdf-area">
 
     <!-- Page 1 -->
     <section id="page1" class="print-page">
@@ -56,7 +59,8 @@
           <div class="subhead">Forecast Date: <span id="forecast-date">—</span></div>
         </div>
         <div class="actions">
-          <button class="btn screen-only" onclick="window.print()">Download PDF</button>
+          <!-- ✅ Changed from window.print() -->
+          <button class="btn screen-only" onclick="downloadPDF()">Download PDF</button>
         </div>
       </header>
 
@@ -131,6 +135,42 @@
   <!-- Load Data + Logic -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+
+  <!-- ✅ Optimized PDF Export (fast + small size) -->
+  <script>
+    function downloadPDF() {
+      // Copy notes (screen) -> print-only notes textarea
+      const notes = document.getElementById("notes");
+      const notesPrint = document.getElementById("notes-print");
+      if (notes && notesPrint) notesPrint.value = notes.value || "";
+
+      const element = document.getElementById("pdf-area");
+      if (!element) { alert("PDF area not found!"); return; }
+
+      const opt = {
+        margin: 0.25,
+        filename: "Cloud_Forecast_Bulletin.pdf",
+
+        // ✅ reduce size
+        image: { type: "jpeg", quality: 0.72 },
+
+        // ✅ reduce render time + size
+        html2canvas: {
+          scale: 1.2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false
+        },
+
+        // ✅ compression ON
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
+
+        pagebreak: { mode: ["css", "avoid-all", "legacy"] }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
 
 </body>
 </html>
