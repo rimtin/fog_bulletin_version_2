@@ -187,13 +187,20 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ✅ PDF Export Fix (fit table + show dropdown values) -->
+  <!-- ✅ PDF Export Fix (fit table + show dropdown values + show full notes) -->
   <script>
     function downloadPDF() {
-      // Copy notes (screen) -> print-only notes textarea
+      // Copy notes (screen) -> print-only textarea
       const notes = document.getElementById("notes");
       const notesPrint = document.getElementById("notes-print");
-      if (notes && notesPrint) notesPrint.value = notes.value || "";
+
+      if (notes && notesPrint) {
+        notesPrint.value = notes.value || "";
+
+        // ✅ IMPORTANT: expand textarea height so full text is captured
+        notesPrint.style.height = "auto";
+        notesPrint.style.height = (notesPrint.scrollHeight || 0) + "px";
+      }
 
       const element = document.getElementById("pdf-area");
       if (!element) { alert("PDF area not found!"); return; }
@@ -225,8 +232,6 @@
           scrollY: 0
         },
         jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
-
-        // ✅ avoid-all causes weird table splits; css+legacy works better
         pagebreak: { mode: ["css", "legacy"] }
       };
 
@@ -240,6 +245,10 @@
             if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
             if (select) select.style.display = "";
           });
+
+          // Restore textarea height
+          if (notesPrint) notesPrint.style.height = "";
+
           document.body.classList.remove("pdf-mode");
         })
         .catch(() => {
@@ -248,12 +257,12 @@
             if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
             if (select) select.style.display = "";
           });
+
+          if (notesPrint) notesPrint.style.height = "";
           document.body.classList.remove("pdf-mode");
         });
     }
   </script>
-
-  <script src="script.js"></script>
 
 </body>
 </html>
