@@ -25,6 +25,32 @@
       background:#111827;
       color:#f9fafb;
     }
+
+    /* ✅ PDF TABLE FIX (DOES NOT CHANGE LAYOUT ON SCREEN) */
+    @media print {
+
+      /* allow content to flow, no clipping */
+      #pdf-area, .container, .table-wrap { overflow: visible !important; }
+
+      /* IMPORTANT: make table headers repeat on next PDF page */
+      table thead { display: table-header-group !important; }
+      table tfoot { display: table-footer-group !important; }
+
+      /* prevent row from being cut in half */
+      table, tr, td, th { page-break-inside: avoid !important; }
+
+      /* allow breaking BETWEEN rows if needed (safe) */
+      tr { break-inside: avoid !important; }
+
+      /* if any fixed widths cause overflow, force fit */
+      table { width: 100% !important; max-width: 100% !important; }
+
+      /* keep text inside cells (no pushing table wider) */
+      th, td {
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+    }
   </style>
 </head>
 
@@ -59,7 +85,6 @@
           <div class="subhead">Forecast Date: <span id="forecast-date">—</span></div>
         </div>
         <div class="actions">
-          <!-- ✅ Changed from window.print() -->
           <button class="btn screen-only" onclick="downloadPDF()">Download PDF</button>
         </div>
       </header>
@@ -151,10 +176,8 @@
         margin: 0.25,
         filename: "Cloud_Forecast_Bulletin.pdf",
 
-        // ✅ reduce size
         image: { type: "jpeg", quality: 0.72 },
 
-        // ✅ reduce render time + size
         html2canvas: {
           scale: 1.2,
           useCORS: true,
@@ -162,10 +185,11 @@
           logging: false
         },
 
-        // ✅ compression ON
         jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
 
-        pagebreak: { mode: ["css", "avoid-all", "legacy"] }
+        /* ✅ KEY: avoid-all causes weird table splitting.
+           Use CSS-based page breaks + legacy fallback. */
+        pagebreak: { mode: ["css", "legacy"] }
       };
 
       html2pdf().set(opt).from(element).save();
