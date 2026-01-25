@@ -10,37 +10,86 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 
-  <!-- ✅ html2pdf -->
+  <!-- html2pdf -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     /* Navigation Bar Styling (matches Fog Bulletin) */
-    .nav-btn {
-      padding: .4rem .9rem;
-      border-radius: .7rem;
-      font-weight: 600;
-      font-size: 0.9rem;
+    .nav-btn { padding:.4rem .9rem; border-radius:.7rem; font-weight:600; font-size:.9rem; }
+    .nav-btn.active { background:#111827; color:#f9fafb; }
+
+    /* ===== PDF MODE (IMPORTANT: html2pdf uses SCREEN styles, not print) ===== */
+    body.pdf-mode .table-wrap { overflow: visible !important; }
+
+    /* Fit table to PDF width */
+    body.pdf-mode .data-table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
     }
-    .nav-btn.active {
-      background:#111827;
-      color:#f9fafb;
+
+    /* Repeat header when table splits (works for canvas capture) */
+    body.pdf-mode .data-table thead { display: table-header-group !important; }
+
+    /* Column widths ONLY in PDF export */
+    body.pdf-mode .data-table th:nth-child(1),
+    body.pdf-mode .data-table td:nth-child(1) { width: 8% !important; }
+    body.pdf-mode .data-table th:nth-child(2),
+    body.pdf-mode .data-table td:nth-child(2) { width: 18% !important; }
+    body.pdf-mode .data-table th:nth-child(3),
+    body.pdf-mode .data-table td:nth-child(3) { width: 30% !important; }
+    body.pdf-mode .data-table th:nth-child(4),
+    body.pdf-mode .data-table td:nth-child(4) { width: 22% !important; }
+    body.pdf-mode .data-table th:nth-child(5),
+    body.pdf-mode .data-table td:nth-child(5) { width: 22% !important; }
+
+    /* Tighten cells only in PDF */
+    body.pdf-mode .data-table th,
+    body.pdf-mode .data-table td {
+      padding: 6px 6px !important;
+      font-size: 12px !important;
+      white-space: normal !important;
+      word-break: break-word !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Pill shown in PDF (replaces select) */
+    .pdf-pill {
+      display:inline-block;
+      width:100%;
+      text-align:center;
+      padding:6px 8px;
+      border:2px solid #111;
+      border-radius:12px;
+      font-weight:700;
+      background:#6fd0ff;
+      color:#0b1b24;
+      box-sizing:border-box;
+    }
+
+    /* ✅ Staging area: MUST be in viewport (NOT far offscreen) */
+    #pdf-staging {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 794px;      /* ~A4 width @ 96dpi */
+      opacity: 0;        /* invisible but rendered */
+      pointer-events: none;
+      z-index: -1;
+      background: #fff;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- 🌥️ TOP NAVIGATION BAR -->
+  <!-- 🌥️ TOP NAVIGATION BAR (Added) -->
   <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
     <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
-
-      <!-- Left Title -->
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:20px;">🌥️</span>
         <span style="font-size:16px; font-weight:800; letter-spacing:0.5px;">Cloud Bulletin</span>
       </div>
-
-      <!-- Right Buttons -->
       <div style="display:flex; gap:6px;">
         <a href="../index.html" class="nav-btn bg-white">fog</a>
         <a href="index.html" class="nav-btn active">cloud</a>
@@ -101,7 +150,7 @@
         </div>
       </div>
 
-      <!-- ✅ PRINT-ONLY Notes (this is what appears in PDF) -->
+      <!-- PRINT-ONLY Notes -->
       <div id="notes-print-card" class="card print-only">
         <h3>Dialog / Notes</h3>
         <textarea id="notes-print" class="notes-box" readonly></textarea>
@@ -121,8 +170,8 @@
       </div>
     </section>
 
-    <!-- ✅ Page 3 (SCREEN ONLY notes) — will NOT appear in PDF now -->
-    <section id="page3" class="print-page screen-only">
+    <!-- Page 3 -->
+    <section id="page3" class="print-page">
       <div class="card">
         <h3>Dialog / Notes</h3>
         <textarea id="notes" placeholder="Add your notes here..." class="notes-box"></textarea>
@@ -130,52 +179,79 @@
     </section>
 
   </div>
-  <!-- ✅ END pdf-area (important: scripts stay OUTSIDE) -->
+  <!-- ✅ END pdf-area -->
 
-  <!-- Load Data + Logic -->
+  <!-- ✅ Staging container (in viewport but invisible) -->
+  <div id="pdf-staging" aria-hidden="true"></div>
+
+  <!-- Load Data + Logic (outside pdf-area) -->
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ✅ PDF Export (uses pdf-mode so screen CSS behaves like print) -->
   <script>
     function downloadPDF() {
+      const original = document.getElementById("pdf-area");
+      if (!original) { alert("PDF area not found!"); return; }
+
+      // Copy notes into print notes and expand height so it's fully captured
       const notes = document.getElementById("notes");
       const notesPrint = document.getElementById("notes-print");
-
-      // Copy notes into print textarea
       if (notes && notesPrint) {
         notesPrint.value = notes.value || "";
-        // Expand height so full text is captured
         notesPrint.style.height = "auto";
         notesPrint.style.height = (notesPrint.scrollHeight || 0) + "px";
       }
 
-      // html2pdf uses screen CSS → enable pdf-mode styles
+      // Turn on PDF mode styles
       document.body.classList.add("pdf-mode");
+
+      // Clone ONLY the pdf-area
+      const clone = original.cloneNode(true);
+
+      // Remove any script/style nodes if they ever got inside by mistake
+      clone.querySelectorAll("script, style").forEach(n => n.remove());
+
+      // Replace selects with pills in the clone so selections show in PDF
+      clone.querySelectorAll("select").forEach(sel => {
+        const pill = document.createElement("div");
+        pill.className = "pdf-pill";
+        pill.textContent = sel.value || sel.options?.[sel.selectedIndex]?.text || "";
+        sel.style.display = "none";
+        sel.parentNode.appendChild(pill);
+      });
+
+      // Stage clone in viewport (invisible but rendered)
+      const staging = document.getElementById("pdf-staging");
+      staging.innerHTML = "";
+      staging.appendChild(clone);
 
       const opt = {
         margin: 0.25,
         filename: "Cloud_Forecast_Bulletin.pdf",
-        image: { type: "jpeg", quality: 0.75 },
+        image: { type: "jpeg", quality: 0.72 },
         html2canvas: {
           scale: 1.2,
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
-          scrollY: 0
+          scrollY: 0,
+          windowWidth: 794
         },
         jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
         pagebreak: { mode: ["css", "legacy"] }
       };
 
-      // Small delay so pdf-mode CSS applies before capture
-      setTimeout(() => {
-        html2pdf().set(opt).from(document.getElementById("pdf-area")).save()
-          .finally(() => {
-            document.body.classList.remove("pdf-mode");
-            if (notesPrint) notesPrint.style.height = "";
-          });
-      }, 120);
+      html2pdf().set(opt).from(clone).save()
+        .then(() => {
+          staging.innerHTML = "";
+          if (notesPrint) notesPrint.style.height = "";
+          document.body.classList.remove("pdf-mode");
+        })
+        .catch(() => {
+          staging.innerHTML = "";
+          if (notesPrint) notesPrint.style.height = "";
+          document.body.classList.remove("pdf-mode");
+        });
     }
   </script>
 
