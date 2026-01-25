@@ -10,248 +10,80 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 
-  <!-- ✅ html2pdf (FAST + SMALL PDF) -->
+  <!-- html2pdf -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-  <style>
-    /* Navigation Bar Styling (matches Fog Bulletin) */
-    .nav-btn {
-      padding: .4rem .9rem;
-      border-radius: .7rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .nav-btn.active {
-      background:#111827;
-      color:#f9fafb;
-    }
-
-    /* ✅ PDF MODE ONLY (does not affect screen layout) */
-    .pdf-mode .table-wrap { overflow: visible !important; }
-
-    /* ✅ Force table to fit page width in PDF */
-    .pdf-mode .data-table {
-      width: 100% !important;
-      max-width: 100% !important;
-      table-layout: fixed !important;
-    }
-
-    /* ✅ Column sizing ONLY for PDF so it doesn't cut */
-    .pdf-mode .data-table th:nth-child(1),
-    .pdf-mode .data-table td:nth-child(1) { width: 8% !important; }   /* S.No */
-    .pdf-mode .data-table th:nth-child(2),
-    .pdf-mode .data-table td:nth-child(2) { width: 18% !important; }  /* State */
-    .pdf-mode .data-table th:nth-child(3),
-    .pdf-mode .data-table td:nth-child(3) { width: 30% !important; }  /* Sub Division */
-    .pdf-mode .data-table th:nth-child(4),
-    .pdf-mode .data-table td:nth-child(4) { width: 22% !important; }  /* Day 1 */
-    .pdf-mode .data-table th:nth-child(5),
-    .pdf-mode .data-table td:nth-child(5) { width: 22% !important; }  /* Day 2 */
-
-    /* ✅ Tighten only in PDF so it fits */
-    .pdf-mode .data-table th,
-    .pdf-mode .data-table td {
-      padding: 6px 6px !important;
-      font-size: 12px !important;
-      white-space: normal !important;
-      word-break: break-word !important;
-    }
-
-    /* ✅ Make table headers repeat if table breaks onto next page */
-    @media print {
-      table thead { display: table-header-group !important; }
-      table tfoot { display: table-footer-group !important; }
-      table, tr, td, th { page-break-inside: avoid !important; }
-    }
-
-    /* ✅ Replacement pill (for select -> text) ONLY during PDF */
-    .pdf-pill {
-      display: inline-block;
-      width: 100%;
-      text-align: center;
-      padding: 6px 8px;
-      border: 2px solid #111;
-      border-radius: 12px;
-      font-weight: 700;
-      background: #6fd0ff;
-      color: #0b1b24;
-      box-sizing: border-box;
-    }
-  </style>
 </head>
 
 <body>
+  <div class="container" id="pdf-root">
 
-  <!-- 🌥️ TOP NAVIGATION BAR (Added) -->
-  <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
-    <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
-
-      <!-- Left Title -->
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:20px;">🌥️</span>
-        <span style="font-size:16px; font-weight:800; letter-spacing:0.5px;">Cloud Bulletin</span>
+    <!-- Header -->
+    <div class="header screen-only">
+      <div class="title-wrap">
+        <h1>Cloud Coverage Forecast Bulletin</h1>
+        <div class="subhead">State-wise Cloud Coverage Forecast</div>
       </div>
-
-      <!-- Right Buttons -->
-      <div style="display:flex; gap:6px;">
-        <a href="../index.html" class="nav-btn bg-white">fog</a>
-        <a href="index.html" class="nav-btn active">cloud</a>
+      <div class="actions">
+        <button id="downloadBtn" class="btn">Download PDF</button>
       </div>
     </div>
-  </nav>
 
-  <!-- Main Container -->
-  <div class="container" id="pdf-area">
-
-    <!-- Page 1 -->
+    <!-- PAGE 1 (example cards) -->
     <section id="page1" class="print-page">
-      <header class="header">
-        <div class="title-wrap">
-          <h1>Cloud Coverage Forecast Bulletin</h1>
-          <div class="subhead">Forecast Date: <span id="forecast-date">—</span></div>
-        </div>
-        <div class="actions">
-          <button class="btn screen-only" onclick="downloadPDF()">Download PDF</button>
-        </div>
-      </header>
-
-      <!-- Colored cloud classification table -->
       <div class="card">
-        <h3>Cloud Cover Classification</h3>
+        <h3>Forecast Table</h3>
         <div class="table-wrap">
-          <table class="cloud-table" id="cloudTable">
-            <thead>
-              <tr>
-                <th style="width:72px">S. No.</th>
-                <th style="width:170px">Sky Covered by clouds</th>
-                <th style="width:240px">Cloud Cover</th>
-                <th>Cloud Type</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <p class="cloud-note"><strong>Note:</strong> <em>This terminology is for local use only.</em></p>
-      </div>
-
-      <!-- Sub-division forecast table -->
-      <div class="card">
-        <h3>Sub-Division Forecast (Day 1 & Day 2)</h3>
-        <div class="table-wrap">
+          <!-- Your existing table stays as-is -->
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:72px">S. No.</th>
-                <th style="width:240px">State</th>
-                <th>Sub Division</th>
-                <th style="width:260px">Day 1</th>
-                <th style="width:260px">Day 2</th>
+                <th>State</th>
+                <th>Day 1</th>
+                <th>Day 2</th>
               </tr>
             </thead>
-            <tbody id="forecast-table-body"></tbody>
+            <tbody>
+              <tr>
+                <td data-col="state">Example State</td>
+                <td>Clear</td>
+                <td>Cloudy</td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
 
-      <!-- PRINT-ONLY Notes -->
+      <!-- ✅ SCREEN NOTES (your real input area) -->
+      <div class="card screen-only" id="notes-screen-card">
+        <h3>Dialog / Notes</h3>
+
+        <!-- Use ONE of these: textarea OR contenteditable div -->
+
+        <!-- Option A: TEXTAREA (recommended) -->
+        <textarea id="notes-box" class="notes-box" placeholder="Type notes here..."></textarea>
+
+        <!-- Option B: contenteditable div (if you use this, comment textarea above) -->
+        <!-- <div id="notes-box" class="notes-box" contenteditable="true"></div> -->
+      </div>
+
+      <!-- ✅ PDF-only Notes Copy (html2pdf renders this correctly) -->
       <div id="notes-print-card" class="card print-only">
         <h3>Dialog / Notes</h3>
-        <textarea id="notes-print" class="notes-box" readonly></textarea>
+        <div id="notes-print-content" class="notes-box"></div>
       </div>
+
     </section>
 
-    <!-- Page 2 -->
+    <!-- PAGE 2 example -->
     <section id="page2" class="print-page">
-      <div class="map-card page-break-avoid">
-        <h4>Map 1 – Projection of Division Weather Forecast (Day 1)</h4>
-        <svg id="indiaMapDay1" viewBox="0 0 860 580" width="100%" height="420"></svg>
-      </div>
-
-      <div class="map-card page-break-avoid">
-        <h4>Map 2 – Projection of Division Weather Forecast (Day 2)</h4>
-        <svg id="indiaMapDay2" viewBox="0 0 860 580" width="100%" height="420"></svg>
-      </div>
-    </section>
-
-    <!-- Page 3 (screen only notes) -->
-    <section id="page3" class="print-page">
-      <div class="card">
-        <h3>Dialog / Notes</h3>
-        <textarea id="notes" placeholder="Add your notes here..." class="notes-box"></textarea>
+      <div class="map-card">
+        <h4>Map (Example)</h4>
+        <svg id="map" width="100%" height="420"></svg>
       </div>
     </section>
 
   </div>
 
-  <!-- Load Data + Logic -->
-  <script src="data.js"></script>
-  <script src="app.js"></script>
-
-  <!-- ✅ PDF Export Fix (fit table + show dropdown values) -->
-  <script>
-    function downloadPDF() {
-      // Copy notes (screen) -> print-only notes textarea
-      const notes = document.getElementById("notes");
-      const notesPrint = document.getElementById("notes-print");
-      if (notes && notesPrint) notesPrint.value = notes.value || "";
-
-      const element = document.getElementById("pdf-area");
-      if (!element) { alert("PDF area not found!"); return; }
-
-      // ✅ Turn on PDF mode (only affects export)
-      document.body.classList.add("pdf-mode");
-
-      // ✅ Replace selects with pills so the selected values appear in PDF
-      const replaced = [];
-      element.querySelectorAll("select").forEach(sel => {
-        const pill = document.createElement("div");
-        pill.className = "pdf-pill";
-        pill.textContent = sel.value || sel.options?.[sel.selectedIndex]?.text || "";
-
-        replaced.push({ select: sel, pill });
-        sel.style.display = "none";
-        sel.parentNode.appendChild(pill);
-      });
-
-      const opt = {
-        margin: 0.25,
-        filename: "Cloud_Forecast_Bulletin.pdf",
-        image: { type: "jpeg", quality: 0.72 },
-        html2canvas: {
-          scale: 1.2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-          scrollY: 0
-        },
-        jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
-
-        // ✅ avoid-all causes weird table splits; css+legacy works better
-        pagebreak: { mode: ["css", "legacy"] }
-      };
-
-      html2pdf()
-        .set(opt)
-        .from(element)
-        .save()
-        .then(() => {
-          // Restore UI
-          replaced.forEach(({ select, pill }) => {
-            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
-            if (select) select.style.display = "";
-          });
-          document.body.classList.remove("pdf-mode");
-        })
-        .catch(() => {
-          // Restore even if export fails
-          replaced.forEach(({ select, pill }) => {
-            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
-            if (select) select.style.display = "";
-          });
-          document.body.classList.remove("pdf-mode");
-        });
-    }
-  </script>
-
+  <script src="script.js"></script>
 </body>
 </html>
