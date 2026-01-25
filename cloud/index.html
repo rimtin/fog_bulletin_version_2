@@ -26,30 +26,56 @@
       color:#f9fafb;
     }
 
-    /* ✅ PDF TABLE FIX (DOES NOT CHANGE LAYOUT ON SCREEN) */
+    /* ✅ PDF MODE ONLY (does not affect screen layout) */
+    .pdf-mode .table-wrap { overflow: visible !important; }
+
+    /* ✅ Force table to fit page width in PDF */
+    .pdf-mode .data-table {
+      width: 100% !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+    }
+
+    /* ✅ Column sizing ONLY for PDF so it doesn't cut */
+    .pdf-mode .data-table th:nth-child(1),
+    .pdf-mode .data-table td:nth-child(1) { width: 8% !important; }   /* S.No */
+    .pdf-mode .data-table th:nth-child(2),
+    .pdf-mode .data-table td:nth-child(2) { width: 18% !important; }  /* State */
+    .pdf-mode .data-table th:nth-child(3),
+    .pdf-mode .data-table td:nth-child(3) { width: 30% !important; }  /* Sub Division */
+    .pdf-mode .data-table th:nth-child(4),
+    .pdf-mode .data-table td:nth-child(4) { width: 22% !important; }  /* Day 1 */
+    .pdf-mode .data-table th:nth-child(5),
+    .pdf-mode .data-table td:nth-child(5) { width: 22% !important; }  /* Day 2 */
+
+    /* ✅ Tighten only in PDF so it fits */
+    .pdf-mode .data-table th,
+    .pdf-mode .data-table td {
+      padding: 6px 6px !important;
+      font-size: 12px !important;
+      white-space: normal !important;
+      word-break: break-word !important;
+    }
+
+    /* ✅ Make table headers repeat if table breaks onto next page */
     @media print {
-
-      /* allow content to flow, no clipping */
-      #pdf-area, .container, .table-wrap { overflow: visible !important; }
-
-      /* IMPORTANT: make table headers repeat on next PDF page */
       table thead { display: table-header-group !important; }
       table tfoot { display: table-footer-group !important; }
-
-      /* prevent row from being cut in half */
       table, tr, td, th { page-break-inside: avoid !important; }
+    }
 
-      /* allow breaking BETWEEN rows if needed (safe) */
-      tr { break-inside: avoid !important; }
-
-      /* if any fixed widths cause overflow, force fit */
-      table { width: 100% !important; max-width: 100% !important; }
-
-      /* keep text inside cells (no pushing table wider) */
-      th, td {
-        white-space: normal !important;
-        word-break: break-word !important;
-      }
+    /* ✅ Replacement pill (for select -> text) ONLY during PDF */
+    .pdf-pill {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      padding: 6px 8px;
+      border: 2px solid #111;
+      border-radius: 12px;
+      font-weight: 700;
+      background: #6fd0ff;
+      color: #0b1b24;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -116,7 +142,7 @@
             <thead>
               <tr>
                 <th style="width:72px">S. No.</th>
-                <th style="width:170px">State</th>
+                <th style="width:240px">State</th>
                 <th>Sub Division</th>
                 <th style="width:260px">Day 1</th>
                 <th style="width:260px">Day 2</th>
@@ -161,7 +187,7 @@
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ✅ Optimized PDF Export (fast + small size) -->
+  <!-- ✅ PDF Export Fix (fit table + show dropdown values) -->
   <script>
     function downloadPDF() {
       // Copy notes (screen) -> print-only notes textarea
@@ -172,27 +198,58 @@
       const element = document.getElementById("pdf-area");
       if (!element) { alert("PDF area not found!"); return; }
 
+      // ✅ Turn on PDF mode (only affects export)
+      document.body.classList.add("pdf-mode");
+
+      // ✅ Replace selects with pills so the selected values appear in PDF
+      const replaced = [];
+      element.querySelectorAll("select").forEach(sel => {
+        const pill = document.createElement("div");
+        pill.className = "pdf-pill";
+        pill.textContent = sel.value || sel.options?.[sel.selectedIndex]?.text || "";
+
+        replaced.push({ select: sel, pill });
+        sel.style.display = "none";
+        sel.parentNode.appendChild(pill);
+      });
+
       const opt = {
         margin: 0.25,
         filename: "Cloud_Forecast_Bulletin.pdf",
-
         image: { type: "jpeg", quality: 0.72 },
-
         html2canvas: {
           scale: 1.2,
           useCORS: true,
           backgroundColor: "#ffffff",
-          logging: false
+          logging: false,
+          scrollY: 0
         },
-
         jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
 
-        /* ✅ KEY: avoid-all causes weird table splitting.
-           Use CSS-based page breaks + legacy fallback. */
+        // ✅ avoid-all causes weird table splits; css+legacy works better
         pagebreak: { mode: ["css", "legacy"] }
       };
 
-      html2pdf().set(opt).from(element).save();
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          // Restore UI
+          replaced.forEach(({ select, pill }) => {
+            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
+            if (select) select.style.display = "";
+          });
+          document.body.classList.remove("pdf-mode");
+        })
+        .catch(() => {
+          // Restore even if export fails
+          replaced.forEach(({ select, pill }) => {
+            if (pill && pill.parentNode) pill.parentNode.removeChild(pill);
+            if (select) select.style.display = "";
+          });
+          document.body.classList.remove("pdf-mode");
+        });
     }
   </script>
 
