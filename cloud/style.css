@@ -1,3 +1,4 @@
+
 :root{
   --bg:#f6f7f9;
   --card-bg:#fff;
@@ -116,7 +117,7 @@ table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixe
   .notes-box{ min-height:180px; }
 }
 
-/* ---------- Print layout (PDF) ---------- */
+/* ---------- Print layout (Browser Print) ---------- */
 @page{ size:A4 portrait; margin:12mm; }
 .print-page{ margin-bottom:24px; }
 .screen-only{ display:block; }
@@ -130,14 +131,14 @@ table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixe
   .print-only{ display:block !important; }
   .screen-only{ display:none !important; }
 
-  /* ✅ Fix table clipping in PDF */
+  /* Fix table clipping in browser print */
   .table-wrap{ overflow:visible !important; }
   table{ width:100% !important; min-width:0 !important; table-layout:auto !important; }
   .data-table th, .data-table td{ padding:8px 10px; font-size:12.5px; }
   .data-table tr{ break-inside:avoid; page-break-inside:avoid; }
 
-  /* ✅✅ FINAL FIX: notes must NOT be scrollable/resizable in PDF */
-  #notes-print-content.notes-box{
+  /* ✅ FIXED selector: notes-print (not notes-print-content) */
+  #notes-print.notes-box{
     height:auto !important;
     max-height:none !important;
     min-height:0 !important;
@@ -152,31 +153,66 @@ table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixe
     overflow:visible !important;
   }
 }
-/* ================= NEXT-LINE LOGIC FOR PDF ================= */
-body.pdf-mode table {
+
+/* ================= PDF MODE FIX (html2pdf uses SCREEN CSS) ================= */
+
+/* ✅ Fix tilted/warped PDF: disable transforms/filters/shadows during export */
+body.pdf-mode *,
+body.pdf-mode *::before,
+body.pdf-mode *::after{
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+  box-shadow: none !important;
+}
+
+/* Stable capture */
+body.pdf-mode{
+  background:#fff !important;
+  overflow: visible !important;
+}
+
+/* ✅ Cancel responsive min-width during PDF (this is a BIG fix) */
+body.pdf-mode table{
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;          /* cancels 820px/740px */
   table-layout: fixed !important;
-  width: 100% !important;
 }
 
-body.pdf-mode th,
-body.pdf-mode td {
-  white-space: normal !important;      /* allow next line */
-  word-break: break-word !important;   /* break long words */
-  overflow-wrap: anywhere !important;  /* force wrap if needed */
-  line-height: 1.25 !important;
-}
-
-/* Pills / Day1-Day2 values go to next line if needed */
-body.pdf-mode .pdf-pill,
-body.pdf-mode select,
-body.pdf-mode option {
-  white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
-}
-
-/* Prevent horizontal overflow completely */
-body.pdf-mode .table-wrap {
+/* No clipping in capture */
+body.pdf-mode .table-wrap{
+  overflow: visible !important;
   overflow-x: hidden !important;
 }
 
+/* ✅ Next-line logic inside cells */
+body.pdf-mode th,
+body.pdf-mode td{
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.25 !important;
+}
+
+/* Slightly tighter for PDF only */
+body.pdf-mode .data-table th,
+body.pdf-mode .data-table td{
+  padding: 6px 6px !important;
+  font-size: 12px !important;
+}
+
+/* ✅ Notes: remove scrolling/resizing so full text is captured */
+body.pdf-mode .notes-box{
+  resize: none !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* ✅ Remove max-width during PDF so html2canvas doesn’t scale weird */
+body.pdf-mode .container{
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+}
