@@ -10,75 +10,37 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 
-  <!-- html2pdf -->
+  <!-- ✅ html2pdf -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
-    /* Navigation Bar */
-    .nav-btn { padding:.4rem .9rem; border-radius:.7rem; font-weight:600; font-size:.9rem; }
-    .nav-btn.active { background:#111827; color:#f9fafb; }
-
-    /* ==================================================
-       ✅ NEXT-LINE LOGIC (PDF SAFE)
-       html2pdf respects SCREEN CSS, not @media print
-       ================================================== */
-
-    body.pdf-mode table {
-      width: 100% !important;
-      table-layout: fixed !important;
+    /* Navigation Bar Styling (matches Fog Bulletin) */
+    .nav-btn {
+      padding: .4rem .9rem;
+      border-radius: .7rem;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
-
-    body.pdf-mode th,
-    body.pdf-mode td {
-      white-space: normal !important;
-      word-break: break-word !important;
-      overflow-wrap: anywhere !important;
-      line-height: 1.25 !important;
-      box-sizing: border-box !important;
-    }
-
-    body.pdf-mode .table-wrap { overflow-x: hidden !important; }
-
-    /* Slightly tighter only for PDF */
-    body.pdf-mode th,
-    body.pdf-mode td {
-      font-size: 12px !important;
-      padding: 6px 6px !important;
-    }
-
-    /* ==================================================
-       ✅ FIX TILTED / WARPED PDF PAGES
-       Disable transform/filter/shadows during export
-       ================================================== */
-    body.pdf-mode *,
-    body.pdf-mode *::before,
-    body.pdf-mode *::after {
-      transform: none !important;
-      filter: none !important;
-      perspective: none !important;
-      box-shadow: none !important;
-    }
-
-    body.pdf-mode {
-      overflow: visible !important;
+    .nav-btn.active {
+      background:#111827;
+      color:#f9fafb;
     }
   </style>
 </head>
 
 <body>
 
-  <!-- 🌥️ TOP NAVIGATION -->
+  <!-- 🌥️ TOP NAVIGATION BAR -->
   <nav class="max-w-6xl mx-auto px-4 mt-4 mb-2">
-    <div class="bg-white"
-      style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12);
-             border-radius:16px; padding:8px 16px;
-             display:flex; align-items:center; justify-content:space-between;">
+    <div class="bg-white" style="box-shadow:0 8px 18px -6px rgba(0,0,0,.12); border-radius:16px; padding:8px 16px; display:flex; align-items:center; justify-content:space-between;">
 
+      <!-- Left Title -->
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:20px;">🌥️</span>
-        <span style="font-size:16px; font-weight:800;">Cloud Bulletin</span>
+        <span style="font-size:16px; font-weight:800; letter-spacing:0.5px;">Cloud Bulletin</span>
       </div>
 
+      <!-- Right Buttons -->
       <div style="display:flex; gap:6px;">
         <a href="../index.html" class="nav-btn bg-white">fog</a>
         <a href="index.html" class="nav-btn active">cloud</a>
@@ -86,24 +48,22 @@
     </div>
   </nav>
 
-  <!-- ================= PDF AREA ================= -->
+  <!-- Main Container -->
   <div class="container" id="pdf-area">
 
-    <!-- PAGE 1 -->
-    <section class="print-page">
+    <!-- Page 1 -->
+    <section id="page1" class="print-page">
       <header class="header">
         <div class="title-wrap">
           <h1>Cloud Coverage Forecast Bulletin</h1>
-          <div class="subhead">
-            Forecast Date: <span id="forecast-date">—</span>
-          </div>
+          <div class="subhead">Forecast Date: <span id="forecast-date">—</span></div>
         </div>
         <div class="actions">
           <button class="btn screen-only" onclick="downloadPDF()">Download PDF</button>
         </div>
       </header>
 
-      <!-- Cloud Classification -->
+      <!-- Colored cloud classification table -->
       <div class="card">
         <h3>Cloud Cover Classification</h3>
         <div class="table-wrap">
@@ -119,9 +79,10 @@
             <tbody></tbody>
           </table>
         </div>
+        <p class="cloud-note"><strong>Note:</strong> <em>This terminology is for local use only.</em></p>
       </div>
 
-      <!-- Sub-Division Forecast -->
+      <!-- Sub-division forecast table -->
       <div class="card">
         <h3>Sub-Division Forecast (Day 1 & Day 2)</h3>
         <div class="table-wrap">
@@ -140,15 +101,15 @@
         </div>
       </div>
 
-      <!-- Notes (PDF) -->
-      <div class="card">
+      <!-- ✅ PRINT-ONLY Notes (this is what appears in PDF) -->
+      <div id="notes-print-card" class="card print-only">
         <h3>Dialog / Notes</h3>
         <textarea id="notes-print" class="notes-box" readonly></textarea>
       </div>
     </section>
 
-    <!-- PAGE 2 -->
-    <section class="print-page">
+    <!-- Page 2 -->
+    <section id="page2" class="print-page">
       <div class="map-card page-break-avoid">
         <h4>Map 1 – Projection of Division Weather Forecast (Day 1)</h4>
         <svg id="indiaMapDay1" viewBox="0 0 860 580" width="100%" height="420"></svg>
@@ -160,39 +121,40 @@
       </div>
     </section>
 
-    <!-- PAGE 3 -->
-    <section class="print-page">
+    <!-- ✅ Page 3 (SCREEN ONLY notes) — will NOT appear in PDF now -->
+    <section id="page3" class="print-page screen-only">
       <div class="card">
         <h3>Dialog / Notes</h3>
-        <textarea id="notes" class="notes-box" placeholder="Add your notes here..."></textarea>
+        <textarea id="notes" placeholder="Add your notes here..." class="notes-box"></textarea>
       </div>
     </section>
 
   </div>
-  <!-- ============== END PDF AREA ============== -->
+  <!-- ✅ END pdf-area (important: scripts stay OUTSIDE) -->
 
-  <!-- Data + Logic -->
+  <!-- Load Data + Logic -->
   <script src="data.js"></script>
   <script src="app.js"></script>
 
-  <!-- ================= PDF EXPORT ================= -->
+  <!-- ✅ PDF Export (uses pdf-mode so screen CSS behaves like print) -->
   <script>
     function downloadPDF() {
       const notes = document.getElementById("notes");
       const notesPrint = document.getElementById("notes-print");
 
-      // Copy notes and expand height so full text is captured
+      // Copy notes into print textarea
       if (notes && notesPrint) {
         notesPrint.value = notes.value || "";
+        // Expand height so full text is captured
         notesPrint.style.height = "auto";
         notesPrint.style.height = (notesPrint.scrollHeight || 0) + "px";
       }
 
-      // Enable PDF mode (wrap text + remove transforms to stop tilt)
+      // html2pdf uses screen CSS → enable pdf-mode styles
       document.body.classList.add("pdf-mode");
 
       const opt = {
-        margin: 0.3,
+        margin: 0.25,
         filename: "Cloud_Forecast_Bulletin.pdf",
         image: { type: "jpeg", quality: 0.75 },
         html2canvas: {
@@ -202,15 +164,11 @@
           logging: false,
           scrollY: 0
         },
-        jsPDF: {
-          unit: "in",
-          format: "a4",
-          orientation: "portrait",
-          compress: true
-        }
+        jsPDF: { unit: "in", format: "a4", orientation: "portrait", compress: true },
+        pagebreak: { mode: ["css", "legacy"] }
       };
 
-      // ✅ WAIT a moment so pdf-mode CSS fully applies before capture
+      // Small delay so pdf-mode CSS applies before capture
       setTimeout(() => {
         html2pdf().set(opt).from(document.getElementById("pdf-area")).save()
           .finally(() => {
